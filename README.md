@@ -12,12 +12,6 @@ Tudo roda no aparelho, **sem internet, login ou servidor**, e o vídeo **não é
 
 **Por que importa:** manobras de ré têm pontos cegos que podem causar atropelamentos e acidentes, principalmente com pedestres, crianças e animais. O RéVisão leva esse aviso para carros que não têm o recurso usando uma câmera USB comum, inclusive webcams e câmeras que já estavam paradas e seriam descartadas. Em vez de comprar um kit novo, a pessoa reaproveita o equipamento que já tem, o que adia o descarte de lixo eletrônico, e a calibração das linhas-guia permite que câmeras de modelos diferentes funcionem bem. Tudo roda localmente, sem servidor nem internet.
 
-<p align="center">
-  <img src="docs/tela-camera.png" alt="Tela da câmera com linhas-guia, caixas de detecção e faixa PARE" width="700">
-  <br>
-  <em>Tela da câmera com linhas-guia, caixas de detecção e faixa PARE.</em>
-</p>
-
 ## Como funciona
 
 1. A câmera USB manda o vídeo para o app.
