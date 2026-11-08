@@ -1,14 +1,17 @@
-<h1 align="center">RéVisão: câmera de ré inteligente</h1>
+# RéVisão: câmera de ré inteligente
 
-<p align="center">
-  Projeto do <strong>Ideathon FATEC</strong> (mobilidade urbana e sustentabilidade).
-</p>
+Projeto do Ideathon FATEC (mobilidade urbana e sustentabilidade).
 
-## O que é
+O RéVisão é um app em Python com Kivy que, ligado a uma câmera USB com ou sem fio instalada na traseira do carro, reconhece pessoas, veículos e animais e avisa o motorista com bipes e alertas na tela quando algo se aproxima. Tudo roda no aparelho, sem internet, login ou servidor, e o vídeo não é gravado.
 
-O RéVisão é um app em Python com Kivy que, ligado a uma câmera USB com ou sem fio instalada na traseira do carro, reconhece **pessoas, veículos e animais** e avisa o motorista com **bipes e alertas na tela** quando algo se aproxima.
+## Equipe
 
-Tudo roda no aparelho, **sem internet, login ou servidor**.
+| Integrante | Papel |
+|---|---|
+| Henrique de Sousa Costa e Lucas Grauth Dessandre | Visão computacional: detecção e distância |
+| Amaury Casari Pardin Junior | Interface e acessibilidade |
+| Carlos Eliel da Silva | Alertas: linhas-guia, caixas, faixa e bipes |
+| Heitor Scavassa Barbosa | Testes, dados e vídeo |
 
 ## Como funciona
 
@@ -17,41 +20,39 @@ Tudo roda no aparelho, **sem internet, login ou servidor**.
 3. O app estima a distância de cada objeto e define a zona: livre, atenção (até 3 m) ou perigo (até 1 m).
 4. A tela mostra as linhas-guia, as caixas e a faixa PARE, e o bipe acelera conforme o objeto se aproxima.
 
-**Telas do app:** inicial, ajuda e câmera (principais); configurações e calibração (extras).
-
 ## Como rodar no computador
 
-Precisa do **Python 3.12** e de uma **câmera USB** ligada ao computador.
+Precisa do Python 3.12 e de uma câmera USB ligada ao computador.
 
-Se ainda não tem o Python 3.12, instale pelo terminal (Windows):
-
-```bash
-winget install -e --id Python.Python.3.12
 ```
-
-Feche e abra o terminal de novo depois da instalação. Em seguida, dentro da pasta do projeto:
-
-```bash
 py -3.12 -m venv venv
 venv\Scripts\activate
 pip install -r requirements-desktop.txt
 python main.py
 ```
 
-Em **Configurações**, escolha a câmera USB e faça a calibração das linhas-guia uma vez, marcando no chão **1 m** e **3 m** a partir da câmera.
+Em Configurações, escolha a câmera na lista "Qual câmera usar". O botão Câmera, na tela da câmera, troca de câmera sem sair dela.
+
+Para a distância ficar certa, faça a calibração uma vez em Configurações > Calibrar linhas-guia:
+
+1. Com uma pessoa em pé a 3 m da câmera, de corpo inteiro, toque em Medir pessoa.
+2. Se a câmera enxerga o chão, marque 1 m e 3 m no chão e arraste as linhas até as marcas. Assim as linhas do chão passam a ser usadas.
+3. Toque em Salvar calibração.
+
+## Telas
+
+Principais: inicial, ajuda e câmera. Extras: configurações e calibração.
 
 ## Limitações
 
 - A distância é uma estimativa e depende da calibração e do chão plano.
 - O app não detecta muros, postes nem meio-fio.
 - À noite ou contra a luz, a detecção piora.
-- É uma ferramenta de apoio e **não substitui a atenção do motorista**.
+- É uma ferramenta de apoio e não substitui a atenção do motorista.
 
-## Bibliotecas e atribuição
+## Bibliotecas
 
-Kivy, [Camera4Kivy](https://github.com/Android-for-Python/Camera4Kivy), TensorFlow Lite (LiteRT) e o modelo EfficientDet-Lite0 (TensorFlow, conjunto COCO).
-
-O código da câmera e do detector foi baseado no exemplo `c4k_tflite_example`, da Camera4Kivy.
+Kivy, Camera4Kivy, TensorFlow Lite (LiteRT) e o modelo EfficientDet-Lite0 (TensorFlow, conjunto COCO). O código da câmera e do detector foi baseado no exemplo c4k_tflite_example, da Camera4Kivy.
 
 ## Uso de IA
 
