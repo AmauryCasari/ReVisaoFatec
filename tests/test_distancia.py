@@ -2,16 +2,18 @@ import math
 
 import pytest
 
-from distancia import (ATENCAO, LIVRE, OBJETOS, PERIGO, Calibracao, Deteccao, Rastreador,
+from distancia import (ATENCAO, LARGURAS, LIVRE, OBJETOS, PERIGO, Calibracao, Deteccao, Rastreador,
                        Situacao, escolher_pessoa, formatar_limite, formatar_metros,
                        intervalo_bipe, iou, medir_foco, texto_pare, texto_status,
                        zona_da_distancia)
 
 
 def caixa_no_chao(cal, rotulo, distancia, centro=0.5, proporcao=0.4, confianca=0.9):
-    altura = OBJETOS[rotulo][2] * cal.foco / distancia
+    altura_real = OBJETOS[rotulo][2]
+    altura = altura_real * cal.foco / distancia
     base = cal.y_no_chao(distancia)
-    largura = altura * proporcao
+    largura_real = LARGURAS.get(rotulo, altura_real * proporcao)
+    largura = largura_real * cal.foco / (distancia * cal.aspecto)
     return Deteccao(rotulo, confianca, centro - largura / 2, base - altura,
                     centro + largura / 2, base)
 
@@ -51,7 +53,7 @@ def test_estimar_objeto_inteiro_na_imagem():
 
 
 def test_crianca_nao_parece_mais_longe():
-    cal = Calibracao()
+    cal = Calibracao(usar_chao=True)
     altura = 1.10 * cal.foco / 2.0
     base = cal.y_no_chao(2.0)
     crianca = Deteccao('person', 0.9, 0.45, base - altura, 0.55, base)
@@ -184,3 +186,32 @@ def test_carro_que_vira_caminhao_continua_o_mesmo_objeto():
 def test_ignora_o_que_nao_e_pessoa_veiculo_ou_animal():
     r = Rastreador()
     assert r.atualizar([Deteccao('chair', 0.99, 0.4, 0.4, 0.6, 0.99)], 0.0).objetos == []
+
+
+def test_pessoa_cortada_nos_pes_longe_nao_vira_perigo():
+    cal = Calibracao()
+    largura = LARGURAS['person'] * cal.foco / (3.0 * cal.aspecto)
+    pessoa = Deteccao('person', 0.9, 0.5 - largura / 2, 0.4, 0.5 + largura / 2, 1.0)
+    assert cal.estimar(pessoa) == pytest.approx(3.0)
+
+
+def test_sem_linhas_do_chao_usa_o_tamanho():
+    cal = Calibracao(usar_chao=False)
+    pessoa = caixa_no_chao(Calibracao(usar_chao=True), 'person', 2.0)
+    assert cal.estimar(pessoa) == pytest.approx(2.0)
+
+
+def test_pessoa_ocupando_a_tela_toda_e_perigo():
+    assert Calibracao().estimar(Deteccao('person', 0.9, 0.0, 0.0, 1.0, 1.0)) <= 1.0
+
+
+def test_pessoa_a_2m_com_os_pes_cortados_fica_em_atencao():
+    cal = Calibracao(usar_chao=True)
+    pessoa = Deteccao('person', 0.9, 0.33, 0.33, 0.505, 1.0)
+    assert 1.2 < cal.estimar(pessoa) < 3.0
+
+
+def test_medir_pessoa_cortada_usa_a_largura():
+    pessoa = Deteccao('person', 0.9, 0.33, 0.33, 0.505, 1.0)
+    foco = medir_foco(pessoa, 2.0, 1.70, 16 / 9)
+    assert Calibracao(foco=foco).estimar(pessoa) == pytest.approx(2.0)

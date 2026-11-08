@@ -21,6 +21,16 @@ OBJETOS = {
     'cow': ('Vaca', 'animal', 1.40),
 }
 
+LARGURAS = {
+    'person': 0.55,
+    'car': 1.75,
+    'motorcycle': 0.80,
+    'bus': 2.50,
+    'truck': 2.40,
+}
+
+BORDA = 0.03
+
 
 @dataclass
 class Deteccao:
@@ -56,7 +66,9 @@ def iou(a, b):
 class Calibracao:
     linha_1m: float = 0.82
     linha_3m: float = 0.51
-    foco: float = 0.87
+    foco: float = 1.0
+    usar_chao: bool = False
+    aspecto: float = 16 / 9
 
     def _chao(self):
         k = 1.5 * (self.linha_1m - self.linha_3m)
@@ -81,10 +93,33 @@ class Calibracao:
             return math.inf
         return altura_real * self.foco / altura_caixa
 
+    def distancia_pela_largura(self, largura_caixa, largura_real):
+        if largura_caixa <= 1e-6:
+            return math.inf
+        return largura_real * self.foco / (largura_caixa * self.aspecto)
+
     def estimar(self, deteccao):
-        altura_real = OBJETOS.get(deteccao.rotulo, ('', '', 1.0))[2]
-        return min(self.distancia_pelo_chao(deteccao.y1),
-                   self.distancia_pelo_tamanho(deteccao.altura, altura_real))
+        d = deteccao
+        altura_real = OBJETOS.get(d.rotulo, ('', '', 1.0))[2]
+        largura_real = LARGURAS.get(d.rotulo)
+        corte_baixo = d.y1 >= 1.0 - BORDA
+        corte_cima = d.y0 <= BORDA
+        corte_lado = d.x0 <= BORDA or d.x1 >= 1.0 - BORDA
+
+        if self.usar_chao and not corte_baixo:
+            chao = self.distancia_pelo_chao(d.y1)
+            if not math.isinf(chao):
+                return chao
+
+        if not corte_baixo and not corte_cima:
+            estimativa = self.distancia_pelo_tamanho(d.altura, altura_real)
+        elif largura_real and not corte_lado:
+            estimativa = self.distancia_pela_largura(d.largura, largura_real)
+        else:
+            estimativa = self.distancia_pelo_tamanho(d.altura, altura_real)
+            if d.altura >= 1.0 - 2 * BORDA:
+                estimativa = min(estimativa, 0.5)
+        return estimativa
 
 
 def zona_da_distancia(distancia, perigo, atencao, zona_anterior=LIVRE, margem=0.15):
@@ -242,5 +277,8 @@ def escolher_pessoa(deteccoes):
     return max(pessoas, key=lambda d: d.confianca) if pessoas else None
 
 
-def medir_foco(pessoa, distancia=3.0, altura_real=1.70):
-    return pessoa.altura * distancia / altura_real
+def medir_foco(pessoa, distancia=3.0, altura_real=1.70, aspecto=16 / 9):
+    inteira = pessoa.y0 > BORDA and pessoa.y1 < 1.0 - BORDA
+    if inteira:
+        return pessoa.altura * distancia / altura_real
+    return pessoa.largura * aspecto * distancia / LARGURAS['person']
