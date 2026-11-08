@@ -15,8 +15,9 @@ from kivy.clock import Clock, mainthread
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.logger import Logger
-from kivy.properties import NumericProperty, StringProperty
+from kivy.properties import BooleanProperty, ListProperty, NumericProperty, StringProperty
 
+import cameras as busca_cameras
 import permissoes
 from alertas import Alarme
 from configuracoes import Configuracoes
@@ -34,6 +35,9 @@ class RevisaoApp(App):
     escala_texto = NumericProperty(1.0)
     motor_nome = StringProperty('')
     erro_detector = StringProperty('')
+    cameras = ListProperty([])
+    procurando_cameras = BooleanProperty(False)
+    camera_atual = StringProperty('')
 
     def build(self):
         self.cfg = Configuracoes(self.user_data_dir)
@@ -47,6 +51,24 @@ class RevisaoApp(App):
 
     def on_start(self):
         Clock.schedule_once(self._carregar_detector, 0.2)
+        self.camera_atual = self.cfg['camera']
+        self.procurar_cameras()
+
+    def procurar_cameras(self):
+        if self.procurando_cameras:
+            return
+        self.procurando_cameras = True
+        busca_cameras.procurar_em_segundo_plano(self._cameras_achadas)
+
+    def _cameras_achadas(self, achadas):
+        self.procurando_cameras = False
+        self.cameras = achadas
+
+    def nome_da_camera(self, ident, lista):
+        for codigo, nome in lista:
+            if codigo == ident:
+                return nome
+        return f'Câmera {int(ident) + 1}' if ident.isdigit() else ident
 
     def _carregar_detector(self, dt=None):
         def tarefa():
@@ -82,6 +104,7 @@ class RevisaoApp(App):
 
     def aplicar_configuracoes(self):
         self.escala_texto = self.cfg['escala_texto']
+        self.camera_atual = self.cfg['camera']
         self.alarme.configurar(self.cfg['som'], self.cfg['volume'])
         if self.detector is not None:
             self.detector.confianca = self.cfg['confianca']

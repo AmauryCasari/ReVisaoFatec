@@ -1,7 +1,10 @@
 import json
 import os
+import sys
 
 from distancia import Calibracao
+
+NO_ANDROID = 'ANDROID_ARGUMENT' in os.environ or hasattr(sys, 'getandroidapilevel')
 
 PADRAO = {
     'som': True,
@@ -9,12 +12,14 @@ PADRAO = {
     'confianca': 0.5,
     'dist_perigo': 1.0,
     'dist_atencao': 3.0,
-    'camera': 'traseira',
+    'camera': 'back' if NO_ANDROID else '0',
     'espelhar': False,
     'escala_texto': 1.0,
     'linha_1m': 0.82,
     'linha_3m': 0.51,
-    'foco': 0.87,
+    'foco': 1.0,
+    'linhas_do_chao': False,
+    'distancia_medida': 3.0,
     'altura_pessoa': 1.70,
 }
 
@@ -28,6 +33,7 @@ LIMITES = {
     'linha_3m': (0.05, 0.95),
     'foco': (0.3, 3.0),
     'altura_pessoa': (1.0, 2.2),
+    'distancia_medida': (1.0, 5.0),
 }
 
 
@@ -69,8 +75,12 @@ class Configuracoes:
         v = self.valores
         for chave, (minimo, maximo) in LIMITES.items():
             v[chave] = float(min(maximo, max(minimo, v[chave])))
-        if v['camera'] not in ('traseira', 'frontal'):
-            v['camera'] = 'traseira'
+        antigas = {'traseira': PADRAO['camera'], 'frontal': 'front' if NO_ANDROID else '1'}
+        v['camera'] = antigas.get(v['camera'], v['camera'])
+        if NO_ANDROID and v['camera'] not in ('back', 'front'):
+            v['camera'] = 'back'
+        if not NO_ANDROID and not v['camera'].isdigit():
+            v['camera'] = '0'
         if v['dist_atencao'] < v['dist_perigo'] + 0.5:
             v['dist_atencao'] = round(v['dist_perigo'] + 0.5, 1)
         if v['linha_3m'] > v['linha_1m'] - 0.05:
@@ -89,10 +99,11 @@ class Configuracoes:
             return False
 
     def restaurar(self, manter_calibracao=True):
-        calibracao = {k: self.valores[k] for k in ('linha_1m', 'linha_3m', 'foco')}
+        calibracao = {k: self.valores[k] for k in ('linha_1m', 'linha_3m', 'foco', 'linhas_do_chao')}
         self.valores = dict(PADRAO)
         if manter_calibracao:
             self.valores.update(calibracao)
 
     def calibracao(self):
-        return Calibracao(self.valores['linha_1m'], self.valores['linha_3m'], self.valores['foco'])
+        v = self.valores
+        return Calibracao(v['linha_1m'], v['linha_3m'], v['foco'], v['linhas_do_chao'])

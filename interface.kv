@@ -4,12 +4,15 @@
 #:import NoTransition kivy.uix.screenmanager.NoTransition
 #:import cor kivy.utils.get_color_from_hex
 
-#:set FUNDO cor('#101418')
-#:set CARTAO cor('#1B2128')
-#:set CARTAO2 cor('#2A333D')
-#:set TEXTO cor('#F2F4F7')
-#:set TEXTO2 cor('#AAB4BE')
+#:set FUNDO cor('#141414')
+#:set CARTAO cor('#1C1C1E')
+#:set BORDA cor('#2E2E31')
+#:set CARTAO2 cor('#2C2C2E')
+#:set TEXTO cor('#F2F2F2')
+#:set TEXTO2 cor('#A1A1A6')
 #:set AMBAR cor('#F5B83D')
+#:set AZUL cor('#1A6BFF')
+#:set CINZA_CLARO cor('#D6D6D9')
 #:set VERMELHO cor('#FF6B61')
 #:set VERMELHO_FORTE cor('#B42318')
 #:set ESCURO cor('#121417')
@@ -30,7 +33,7 @@
 <Subtitulo@Texto>:
     font_size: sp(18) * app.escala_texto
     bold: True
-    color: AMBAR
+    color: CINZA_CLARO
 
 <Rotulo@Label>:
     color: TEXTO
@@ -57,16 +60,47 @@
             radius: [dp(12)]
 
 <BotaoPrimario@Botao>:
-    cor: AMBAR
-    color: ESCURO
+    cor: AZUL
+    color: 1, 1, 1, 1
 
 <BotaoPerigo@Botao>:
     cor: VERMELHO_FORTE
     color: TEXTO
 
 <BotaoOpcao>:
-    cor: AMBAR if self.ativo else CARTAO2
-    color: ESCURO if self.ativo else TEXTO
+    cor: AZUL if self.ativo else CARTAO2
+    color: (1, 1, 1, 1) if self.ativo else TEXTO
+
+<Barra@Slider>:
+    size_hint_y: None
+    height: dp(44)
+    padding: dp(14)
+    background_width: 0
+    cursor_size: 0, 0
+    value_track: False
+    canvas.after:
+        Color:
+            rgba: cor('#3A3A3E')
+        RoundedRectangle:
+            pos: self.x + self.padding, self.center_y - dp(3)
+            size: max(0, self.width - 2 * self.padding), dp(6)
+            radius: [dp(3)]
+        Color:
+            rgba: AZUL
+        RoundedRectangle:
+            pos: self.x + self.padding, self.center_y - dp(3)
+            size: max(0, self.value_pos[0] - self.x - self.padding), dp(6)
+            radius: [dp(3)]
+        Color:
+            rgba: 1, 1, 1, 1
+        Ellipse:
+            pos: self.value_pos[0] - dp(11), self.center_y - dp(11)
+            size: dp(22), dp(22)
+        Color:
+            rgba: AZUL
+        Ellipse:
+            pos: self.value_pos[0] - dp(5), self.center_y - dp(5)
+            size: dp(10), dp(10)
 
 <Cartao@BoxLayout>:
     orientation: 'vertical'
@@ -81,6 +115,11 @@
             pos: self.pos
             size: self.size
             radius: [dp(14)]
+        Color:
+            rgba: BORDA
+        Line:
+            rounded_rectangle: self.x, self.y, self.width, self.height, dp(14)
+            width: dp(1)
 
 <CartaoAjuste@Cartao>:
     size_hint_x: None
@@ -161,10 +200,6 @@ ScreenManager:
                 Texto:
                     markup: True
                     text: '[b]Ferramenta de apoio.[/b] Não substitui os espelhos nem a sua atenção ao manobrar.'
-                Texto:
-                    text: 'O vídeo é analisado no próprio aparelho e não é gravado nem enviado.'
-                    color: TEXTO2
-                    font_size: sp(14) * app.escala_texto
             Widget:
         BoxLayout:
             orientation: 'vertical'
@@ -179,11 +214,6 @@ ScreenManager:
             Botao:
                 text: 'Configurações'
                 on_release: app.ir('ajustes')
-            Texto:
-                text: 'Sem login, funciona sem internet e é gratuito'
-                color: TEXTO2
-                halign: 'center'
-                font_size: sp(13) * app.escala_texto
             Widget:
 
 <TelaCamera>:
@@ -203,6 +233,10 @@ ScreenManager:
                 id: sobre
                 escala_texto: app.escala_texto
                 pos_hint: {'x': 0, 'y': 0}
+            Chip:
+                text: app.nome_da_camera(app.camera_atual, app.cameras)
+                pos_hint: {'x': 0.02, 'y': 0.03}
+                font_size: sp(12) * app.escala_texto
             Chip:
                 text: root.status_texto
                 pos_hint: {'x': 0.02, 'top': 0.97}
@@ -269,6 +303,10 @@ ScreenManager:
                 cor: CARTAO2 if root.som_ligado else [0.42, 0.45, 0.49, 1]
                 on_release: root.alternar_som()
             Botao:
+                text: 'Câmera'
+                size_hint_y: 1
+                on_release: root.trocar_camera()
+            Botao:
                 text: 'Ajustes'
                 size_hint_y: 1
                 on_release: root.abrir_ajustes()
@@ -309,7 +347,7 @@ ScreenManager:
                 pos_hint: {'x': 0.02, 'top': 0.97}
                 canvas.before:
                     Color:
-                        rgba: 0.06, 0.08, 0.10, 0.82
+                        rgba: 0.08, 0.08, 0.09, 0.82
                     RoundedRectangle:
                         pos: self.pos
                         size: self.size
@@ -318,17 +356,17 @@ ScreenManager:
                     text: 'Calibrar linhas-guia'
                     font_size: sp(20) * app.escala_texto
                 Texto:
-                    text: '1. Marque o chão a 1 m e a 3 m da câmera.'
+                    text: '1. Escolha a distância, peça para uma pessoa ficar de frente para a câmera nessa distância e toque em Medir pessoa.'
                     font_size: sp(14) * app.escala_texto
                 Texto:
-                    text: '2. Arraste cada linha até a sua marca.'
+                    text: '2. Só se a câmera enxerga o chão: ligue Linhas do chão, marque 1 m e 3 m no chão e arraste as linhas até as marcas.'
                     font_size: sp(14) * app.escala_texto
                 Texto:
-                    text: '3. Opcional: com uma pessoa sobre a marca de 3 m, toque em Medir pessoa.'
+                    text: '3. Toque em Salvar calibração.'
                     font_size: sp(14) * app.escala_texto
                 Texto:
                     text: root.mensagem
-                    color: AMBAR
+                    color: CINZA_CLARO
                     font_size: sp(14) * app.escala_texto
         BoxLayout:
             orientation: 'vertical'
@@ -347,9 +385,18 @@ ScreenManager:
                 size_hint_y: 1
                 on_release: root.salvar()
             Botao:
+                text: 'Distância: ' + '{:g}'.format(root.distancia_medida).replace('.', ',') + ' m'
+                size_hint_y: 1
+                on_release: root.mudar_distancia_medida()
+            Botao:
                 text: 'Medir pessoa'
                 size_hint_y: 1
                 on_release: root.medir_pessoa()
+            BotaoOpcao:
+                text: 'Linhas do chão: ' + ('sim' if root.usar_chao else 'não')
+                ativo: root.usar_chao
+                size_hint_y: 1
+                on_release: root.alternar_chao()
             Botao:
                 text: 'Padrão'
                 size_hint_y: 1
@@ -419,17 +466,12 @@ ScreenManager:
                             halign: 'right'
                             size_hint_x: None
                             width: dp(80)
-                    Slider:
+                    Barra:
                         min: 0
                         max: 1
                         step: 0.05
                         value: root.volume
                         on_value: root.volume = self.value
-                        size_hint_y: None
-                        height: dp(44)
-                        cursor_size: dp(28), dp(28)
-                        value_track: True
-                        value_track_color: AMBAR
                     Botao:
                         text: 'Testar som'
                         on_release: root.testar_som()
@@ -479,29 +521,33 @@ ScreenManager:
                     Texto:
                         text: 'Confiança mínima da detecção: {}%'.format(int(round(root.confianca * 100)))
                         color: TEXTO2
-                    Slider:
+                    Barra:
                         min: 0.3
                         max: 0.9
                         step: 0.05
                         value: root.confianca
                         on_value: root.confianca = self.value
-                        size_hint_y: None
-                        height: dp(44)
-                        cursor_size: dp(28), dp(28)
-                        value_track: True
-                        value_track_color: AMBAR
                 CartaoAjuste:
                     Subtitulo:
                         text: 'Câmera'
-                    Linha:
-                        BotaoOpcao:
-                            text: 'Câmera do aparelho'
-                            ativo: root.camera == 'traseira'
-                            on_release: root.camera = 'traseira'
-                        BotaoOpcao:
-                            text: 'Câmera USB'
-                            ativo: root.camera == 'frontal'
-                            on_release: root.camera = 'frontal'
+                    Texto:
+                        text: 'Qual câmera usar'
+                        color: TEXTO2
+                    Spinner:
+                        text: app.nome_da_camera(root.camera, app.cameras)
+                        values: [nome for codigo, nome in app.cameras]
+                        on_text: root.escolher_camera(self.text)
+                        size_hint_y: None
+                        height: dp(50)
+                        font_size: sp(16) * app.escala_texto
+                        background_normal: ''
+                        background_color: AZUL
+                        color: 1, 1, 1, 1
+                        bold: True
+                    Botao:
+                        text: 'Procurando câmeras...' if app.procurando_cameras else 'Procurar câmeras de novo'
+                        disabled: app.procurando_cameras
+                        on_release: root.procurar_cameras()
                     Linha:
                         Rotulo:
                             text: 'Espelhar imagem'

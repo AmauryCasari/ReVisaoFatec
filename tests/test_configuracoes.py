@@ -11,12 +11,12 @@ def test_sem_arquivo_usa_o_padrao(tmp_path):
 def test_salva_e_carrega(tmp_path):
     cfg = Configuracoes(str(tmp_path))
     cfg['volume'] = 0.3
-    cfg['camera'] = 'frontal'
+    cfg['camera'] = '1'
     cfg['som'] = False
     assert cfg.salvar()
     outra = Configuracoes(str(tmp_path))
     assert outra['volume'] == 0.3
-    assert outra['camera'] == 'frontal'
+    assert outra['camera'] == '1'
     assert outra['som'] is False
 
 
@@ -33,7 +33,7 @@ def test_valores_fora_do_lugar_sao_corrigidos(tmp_path):
     assert cfg['volume'] == 1.0
     assert cfg['confianca'] == PADRAO['confianca']
     assert cfg['som'] is True
-    assert cfg['camera'] == 'traseira'
+    assert cfg['camera'] == '0'
     assert cfg['dist_atencao'] >= cfg['dist_perigo'] + 0.5
     assert cfg['linha_1m'] > cfg['linha_3m']
 

@@ -95,6 +95,7 @@ class Sobreposicao(_Desenho):
     dist_perigo = NumericProperty(1.0)
     dist_atencao = NumericProperty(3.0)
     modo_calibracao = BooleanProperty(False)
+    mostrar_guias = BooleanProperty(True)
     linha_1m = NumericProperty(0.82)
     linha_3m = NumericProperty(0.51)
     pessoas = ListProperty([], force_dispatch=True)
@@ -104,11 +105,12 @@ class Sobreposicao(_Desenho):
         self._arrastando = None
         self.bind(objetos=self.redesenhar_depois, calibracao=self.redesenhar_depois,
                   dist_perigo=self.redesenhar_depois, dist_atencao=self.redesenhar_depois,
-                  modo_calibracao=self.redesenhar_depois, linha_1m=self.redesenhar_depois,
+                  modo_calibracao=self.redesenhar_depois, mostrar_guias=self.redesenhar_depois, linha_1m=self.redesenhar_depois,
                   linha_3m=self.redesenhar_depois, pessoas=self.redesenhar_depois)
 
     def desenhar(self):
-        self._desenhar_guias()
+        if self.modo_calibracao or self.mostrar_guias:
+            self._desenhar_guias()
         if self.modo_calibracao:
             self._desenhar_pessoas()
         else:

@@ -4,7 +4,7 @@ from kivy.uix.label import Label
 
 
 class Botao(ButtonBehavior, Label):
-    cor = ColorProperty('#2A333D')
+    cor = ColorProperty('#2C2C2E')
 
 
 class BotaoOpcao(Botao):

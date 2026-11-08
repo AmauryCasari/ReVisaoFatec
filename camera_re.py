@@ -13,6 +13,12 @@ class CameraAnalise(Preview):
         self.ao_detectar = None
         self.ao_erro = None
         self._erro_avisado = False
+        self.pixels = None
+
+    def connect_camera(self, **kwargs):
+        self._busy = False
+        self._image_available.clear()
+        super().connect_camera(**kwargs)
 
     def usar_detector(self, detector, ao_detectar, ao_erro=None):
         self.detector = detector
@@ -24,7 +30,7 @@ class CameraAnalise(Preview):
 
     def analyze_pixels_callback(self, pixels, image_size, image_pos, image_scale, mirror):
         detector = self.detector
-        if detector is None:
+        if detector is None or pixels is None:
             return
         if isinstance(image_scale, (list, tuple)):
             escala_x, escala_y = image_scale

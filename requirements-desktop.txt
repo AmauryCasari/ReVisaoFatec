@@ -3,5 +3,6 @@ camera4kivy>=0.3.3
 gestures4kivy
 opencv-python
 ai-edge-litert
+pygrabber; platform_system == "Windows"
 pillow
 pytest

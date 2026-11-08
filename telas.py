@@ -8,7 +8,7 @@ from kivy.utils import platform
 
 import permissoes
 from configuracoes import PADRAO
-from distancia import (LIVRE, PERIGO, Rastreador, Situacao, escolher_pessoa,
+from distancia import (LIVRE, PERIGO, Rastreador, Situacao, escolher_pessoa, formatar_limite,
                        medir_foco, texto_pare, texto_status)
 
 
@@ -16,15 +16,9 @@ def app():
     return App.get_running_app()
 
 
-def id_da_camera(nome):
-    if platform == 'android':
-        return 'front' if nome == 'frontal' else 'back'
-    return '1' if nome == 'frontal' else '0'
-
-
 def conectar(camera, cfg):
     camera.espelhar = cfg['espelhar']
-    camera.connect_camera(camera_id=id_da_camera(cfg['camera']), mirrored=False,
+    camera.connect_camera(camera_id=cfg['camera'], mirrored=False,
                           enable_analyze_pixels=True, enable_video=False)
 
 
@@ -84,6 +78,7 @@ class TelaCamera(Screen):
         sobre.calibracao = calibracao
         sobre.dist_perigo = cfg['dist_perigo']
         sobre.dist_atencao = cfg['dist_atencao']
+        sobre.mostrar_guias = True
         sobre.area_imagem = []
         sobre.espelhado = False
         self.aviso = ''
@@ -139,6 +134,8 @@ class TelaCamera(Screen):
         if self._sem_imagem:
             self._sem_imagem = False
             self.aviso = ''
+        if len(area) == 4 and area[3] > 0:
+            self.rastreador.calibracao.aspecto = area[2] / area[3]
         situacao = self.rastreador.atualizar(deteccoes, self._ultimo_quadro)
         sobre = self.ids.sobre
         sobre.area_imagem = area
@@ -183,6 +180,21 @@ class TelaCamera(Screen):
     def abrir_ajustes(self):
         app().ir('ajustes')
 
+    def trocar_camera(self):
+        a = app()
+        ids = [ident for ident, _ in a.cameras]
+        if len(ids) < 2:
+            self.status_texto = 'Só uma câmera encontrada'
+            return
+        atual = a.cfg['camera']
+        proxima = ids[(ids.index(atual) + 1) % len(ids)] if atual in ids else ids[0]
+        a.cfg['camera'] = proxima
+        a.cfg.salvar()
+        a.aplicar_configuracoes()
+        self._encerrar()
+        self.status_texto = 'Trocando de câmera...'
+        Clock.schedule_once(lambda dt: self._comecar(), 0.5)
+
     def parar(self):
         app().voltar_para('inicio')
 
@@ -191,11 +203,16 @@ class TelaCalibracao(Screen):
     linha_1m = NumericProperty(PADRAO['linha_1m'])
     linha_3m = NumericProperty(PADRAO['linha_3m'])
     foco = NumericProperty(PADRAO['foco'])
+    usar_chao = BooleanProperty(False)
+    distancia_medida = NumericProperty(3.0)
     mensagem = StringProperty('')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._pessoas = []
+        self._carregando = False
+        self._aspecto = 16 / 9
+
 
     def on_enter(self):
         self._comecar()
@@ -213,9 +230,13 @@ class TelaCalibracao(Screen):
         a = app()
         cfg = a.cfg
         if recarregar:
+            self._carregando = True
             self.linha_1m = cfg['linha_1m']
             self.linha_3m = cfg['linha_3m']
             self.foco = cfg['foco']
+            self.usar_chao = cfg['linhas_do_chao']
+            self.distancia_medida = cfg['distancia_medida']
+            self._carregando = False
             self.mensagem = ''
         self._pessoas = []
         self.ids.sobre.pessoas = []
@@ -238,6 +259,8 @@ class TelaCalibracao(Screen):
 
     def ao_detectar(self, deteccoes, area, espelhado):
         self._pessoas = [d for d in deteccoes if d.rotulo == 'person']
+        if len(area) == 4 and area[3] > 0:
+            self._aspecto = area[2] / area[3]
         sobre = self.ids.sobre
         sobre.area_imagem = area
         sobre.espelhado = espelhado != self.ids.camera.espelhar
@@ -249,23 +272,29 @@ class TelaCalibracao(Screen):
             self.mensagem = 'O detector ainda não está pronto. Espere alguns segundos.'
             return
         pessoa = escolher_pessoa(self._pessoas)
+        d = formatar_limite(self.distancia_medida)
         if pessoa is None:
-            self.mensagem = ('Não encontrei ninguém. A pessoa precisa aparecer de corpo '
-                             'inteiro, em pé sobre a marca de 3 m.')
+            self.mensagem = f'Não encontrei ninguém. Peça para a pessoa ficar de frente, a {d} m da câmera.'
             return
-        if pessoa.y0 < 0.01 or pessoa.y1 > 0.99:
-            self.mensagem = 'A pessoa está cortada na imagem. Ela precisa aparecer da cabeça aos pés.'
+        if pessoa.x0 < 0.01 or pessoa.x1 > 0.99:
+            self.mensagem = 'A pessoa está cortada dos lados. Ela precisa ficar no meio da imagem.'
             return
-        self.foco = medir_foco(pessoa, 3.0, a.cfg['altura_pessoa'])
-        self.linha_3m = max(0.05, min(pessoa.y1, self.linha_1m - 0.05))
-        self.mensagem = ('Pessoa medida: a linha de 3 m foi para os pés dela. '
-                         'Confira e toque em Salvar calibração.')
+        aspecto = self._aspecto
+        self.foco = medir_foco(pessoa, self.distancia_medida, a.cfg['altura_pessoa'], aspecto)
+        self.mensagem = f'Pessoa medida a {d} m. Toque em Salvar calibração.'
+
+    def mudar_distancia_medida(self):
+        opcoes = [1.0, 1.5, 2.0, 3.0]
+        atual = self.distancia_medida
+        self.distancia_medida = opcoes[(opcoes.index(atual) + 1) % len(opcoes)] if atual in opcoes else 2.0
 
     def salvar(self):
         a = app()
         a.cfg['linha_1m'] = self.linha_1m
         a.cfg['linha_3m'] = self.linha_3m
         a.cfg['foco'] = self.foco
+        a.cfg['linhas_do_chao'] = self.usar_chao
+        a.cfg['distancia_medida'] = self.distancia_medida
         a.cfg.salvar()
         a.voltar()
 
@@ -273,10 +302,16 @@ class TelaCalibracao(Screen):
         app().voltar()
 
     def restaurar(self):
+        self._carregando = True
         self.linha_1m = PADRAO['linha_1m']
         self.linha_3m = PADRAO['linha_3m']
         self.foco = PADRAO['foco']
+        self.usar_chao = False
+        self._carregando = False
         self.mensagem = 'Valores padrão. Toque em Salvar calibração para manter.'
+
+    def alternar_chao(self):
+        self.usar_chao = not self.usar_chao
 
 
 CHAVES_AJUSTES = ('som', 'volume', 'confianca', 'dist_perigo', 'dist_atencao',
@@ -289,7 +324,7 @@ class TelaAjustes(Screen):
     confianca = NumericProperty(0.5)
     dist_perigo = NumericProperty(1.0)
     dist_atencao = NumericProperty(3.0)
-    camera = StringProperty('traseira')
+    camera = StringProperty(PADRAO['camera'])
     espelhar = BooleanProperty(False)
     escala_texto = NumericProperty(1.0)
 
@@ -316,6 +351,15 @@ class TelaAjustes(Screen):
 
     def testar_som(self):
         app().alarme.testar(self.volume)
+
+    def escolher_camera(self, nome):
+        for ident, rotulo in app().cameras:
+            if rotulo == nome:
+                self.camera = ident
+                return
+
+    def procurar_cameras(self):
+        app().procurar_cameras()
 
     def _aplicar(self):
         a = app()
