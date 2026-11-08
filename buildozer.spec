@@ -7,7 +7,7 @@ package.domain = br.edu.fatec.ideathon
 
 source.dir = .
 source.include_exts = py,kv,png,wav,tflite
-source.exclude_dirs = tests, ferramentas, camerax_provider, bin, .buildozer, .git, venv, .venv, __pycache__
+source.exclude_dirs = tests, ferramentas, camerax_provider, p4a_recipes, bin, .buildozer, .git, venv, .venv, __pycache__
 
 version = 0.1.0
 
@@ -31,10 +31,12 @@ android.enable_androidx = True
 
 android.wakelock = True
 
-android.presplash_color = #101418
+android.presplash_color = #141414
 android.accept_sdk_license = True
 
 p4a.hook = camerax_provider/gradle_options.py
+
+p4a.local_recipes = ./p4a_recipes
 
 p4a.branch = v2026.05.09
 
