@@ -1,13 +1,8 @@
-# Buildozer
 .buildozer/
 bin/
-
-# Python
 __pycache__/
 *.pyc
 .pytest_cache/
 venv/
 .venv/
-
-# Saídas da ferramenta de teste
 *_revisao.png
