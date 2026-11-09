@@ -4,7 +4,7 @@ import pytest
 
 from distancia import (ATENCAO, LARGURAS, LIVRE, OBJETOS, PERIGO, Calibracao, Deteccao, Rastreador,
                        Situacao, escolher_pessoa, formatar_limite, formatar_metros,
-                       intervalo_bipe, iou, linhas_pelas_distancias, medir_foco, texto_pare, texto_status,
+                       intervalo_bipe, iou, chao_pelas_distancias, medir_foco, texto_pare, texto_status,
                        zona_da_distancia)
 
 
@@ -20,8 +20,8 @@ def caixa_no_chao(cal, rotulo, distancia, centro=0.5, proporcao=0.4, confianca=0
 
 def test_calibracao_bate_nas_marcas_de_1m_e_3m():
     cal = Calibracao()
-    assert cal.distancia_pelo_chao(cal.linha_1m) == pytest.approx(1.0)
-    assert cal.distancia_pelo_chao(cal.linha_3m) == pytest.approx(3.0)
+    assert cal.y_no_chao(1.0) == pytest.approx(0.82)
+    assert cal.y_no_chao(3.0) == pytest.approx(0.51)
 
 
 def test_quanto_mais_baixo_na_imagem_mais_perto():
@@ -36,7 +36,7 @@ def test_acima_do_horizonte_e_longe():
 
 
 def test_y_no_chao_e_o_inverso_da_distancia():
-    cal = Calibracao(0.8, 0.5, 0.9)
+    cal = Calibracao(0.35, 0.45, 0.9)
     for d in (0.8, 1.0, 2.0, 3.0, 6.0):
         assert cal.distancia_pelo_chao(cal.y_no_chao(d)) == pytest.approx(d)
 
@@ -217,8 +217,8 @@ def test_medir_pessoa_cortada_usa_a_largura():
     assert Calibracao(foco=foco).estimar(pessoa) == pytest.approx(2.0)
 
 
-def test_linhas_pelas_distancias_de_perigo_e_atencao():
-    linha_1m, linha_3m = linhas_pelas_distancias(0.9, 1.5, 0.55, 8.0)
-    cal = Calibracao(linha_1m, linha_3m, usar_chao=True)
+def test_chao_pelas_distancias_de_perigo_e_atencao():
+    horizonte, escala = chao_pelas_distancias(0.9, 1.5, 0.55, 8.0)
+    cal = Calibracao(horizonte, escala, usar_chao=True)
     assert cal.y_no_chao(1.5) == pytest.approx(0.9)
     assert cal.y_no_chao(8.0) == pytest.approx(0.55)

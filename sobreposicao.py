@@ -8,7 +8,7 @@ from kivy.properties import BooleanProperty, ListProperty, NumericProperty, Obje
 from kivy.uix.stencilview import StencilView
 from kivy.utils import get_color_from_hex
 
-from distancia import ATENCAO, LIVRE, PERIGO, Calibracao, formatar_limite, linhas_pelas_distancias
+from distancia import ATENCAO, LIVRE, PERIGO, Calibracao, formatar_limite, chao_pelas_distancias
 
 COR_ZONA = {
     LIVRE: get_color_from_hex('#3DD68C'),
@@ -96,8 +96,8 @@ class Sobreposicao(_Desenho):
     dist_atencao = NumericProperty(3.0)
     modo_calibracao = BooleanProperty(False)
     mostrar_guias = BooleanProperty(True)
-    linha_1m = NumericProperty(0.82)
-    linha_3m = NumericProperty(0.51)
+    chao_horizonte = NumericProperty(0.355)
+    chao_escala = NumericProperty(0.465)
     pessoas = ListProperty([], force_dispatch=True)
 
     def __init__(self, **kwargs):
@@ -105,8 +105,8 @@ class Sobreposicao(_Desenho):
         self._arrastando = None
         self.bind(objetos=self.redesenhar_depois, calibracao=self.redesenhar_depois,
                   dist_perigo=self.redesenhar_depois, dist_atencao=self.redesenhar_depois,
-                  modo_calibracao=self.redesenhar_depois, mostrar_guias=self.redesenhar_depois, linha_1m=self.redesenhar_depois,
-                  linha_3m=self.redesenhar_depois, pessoas=self.redesenhar_depois)
+                  modo_calibracao=self.redesenhar_depois, mostrar_guias=self.redesenhar_depois, chao_horizonte=self.redesenhar_depois,
+                  chao_escala=self.redesenhar_depois, pessoas=self.redesenhar_depois)
 
     def desenhar(self):
         if self.modo_calibracao or self.mostrar_guias:
@@ -118,7 +118,7 @@ class Sobreposicao(_Desenho):
 
     def _desenhar_guias(self):
         if self.modo_calibracao:
-            cal = Calibracao(self.linha_1m, self.linha_3m)
+            cal = Calibracao(self.chao_horizonte, self.chao_escala)
             y_perto, y_longe = self._linhas_calibracao()
             marcas = [(y_perto, PERIGO, f'{formatar_limite(self.dist_perigo)} m'),
                       (y_longe, ATENCAO, f'{formatar_limite(self.dist_atencao)} m')]
@@ -216,7 +216,7 @@ class Sobreposicao(_Desenho):
             self.etiqueta('Pessoa', min(xa, xb), y_topo, (1, 1, 1, 0.9))
 
     def _linhas_calibracao(self):
-        cal = Calibracao(self.linha_1m, self.linha_3m)
+        cal = Calibracao(self.chao_horizonte, self.chao_escala)
         y_perto = min(0.99, max(0.05, cal.y_no_chao(self.dist_perigo)))
         y_longe = min(y_perto - 0.03, max(0.02, cal.y_no_chao(self.dist_atencao)))
         return y_perto, y_longe
@@ -242,10 +242,10 @@ class Sobreposicao(_Desenho):
                 y_perto = min(0.99, max(y_longe + 0.03, yn))
             else:
                 y_longe = max(0.02, min(y_perto - 0.03, yn))
-            linha_1m, linha_3m = linhas_pelas_distancias(
+            horizonte, escala = chao_pelas_distancias(
                 y_perto, self.dist_perigo, y_longe, self.dist_atencao)
-            self.linha_1m = linha_1m
-            self.linha_3m = linha_3m
+            self.chao_horizonte = horizonte
+            self.chao_escala = escala
             return True
         return super().on_touch_move(touch)
 

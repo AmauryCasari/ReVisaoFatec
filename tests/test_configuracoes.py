@@ -27,7 +27,7 @@ def test_arquivo_estragado_nao_trava(tmp_path):
 
 def test_valores_fora_do_lugar_sao_corrigidos(tmp_path):
     ruim = {'volume': 7, 'confianca': 'alta', 'som': 'sim', 'camera': 'lateral',
-            'dist_perigo': 2.0, 'dist_atencao': 1.0, 'linha_1m': 0.3, 'linha_3m': 0.6}
+            'dist_perigo': 2.0, 'dist_atencao': 1.0, 'chao_escala': -0.5}
     (tmp_path / 'revisao_config.json').write_text(json.dumps(ruim), encoding='utf-8')
     cfg = Configuracoes(str(tmp_path))
     assert cfg['volume'] == 1.0
@@ -35,13 +35,13 @@ def test_valores_fora_do_lugar_sao_corrigidos(tmp_path):
     assert cfg['som'] is True
     assert cfg['camera'] == '0'
     assert cfg['dist_atencao'] >= cfg['dist_perigo'] + 0.5
-    assert cfg['linha_1m'] > cfg['linha_3m']
+    assert cfg['chao_escala'] > 0
 
 
 def test_restaurar_mantem_a_calibracao(tmp_path):
     cfg = Configuracoes(str(tmp_path))
-    cfg['linha_1m'] = 0.9
+    cfg['chao_escala'] = 0.6
     cfg['volume'] = 0.1
     cfg.restaurar()
-    assert cfg['linha_1m'] == 0.9
+    assert cfg['chao_escala'] == 0.6
     assert cfg['volume'] == PADRAO['volume']

@@ -64,29 +64,19 @@ def iou(a, b):
 
 @dataclass
 class Calibracao:
-    linha_1m: float = 0.82
-    linha_3m: float = 0.51
+    horizonte: float = 0.355
+    escala: float = 0.465
     foco: float = 1.0
     usar_chao: bool = False
     aspecto: float = 16 / 9
 
-    def _chao(self):
-        k = 1.5 * (self.linha_1m - self.linha_3m)
-        return k, self.linha_1m - k
-
-    @property
-    def horizonte(self):
-        return self._chao()[1]
-
     def distancia_pelo_chao(self, y_base):
-        k, horizonte = self._chao()
-        if k <= 0 or y_base <= horizonte + 1e-6:
+        if self.escala <= 0 or y_base <= self.horizonte + 1e-6:
             return math.inf
-        return k / (y_base - horizonte)
+        return self.escala / (y_base - self.horizonte)
 
     def y_no_chao(self, distancia):
-        k, horizonte = self._chao()
-        return horizonte + k / max(distancia, 0.01)
+        return self.horizonte + self.escala / max(distancia, 0.01)
 
     def distancia_pelo_tamanho(self, altura_caixa, altura_real):
         if altura_caixa <= 1e-6:
@@ -284,7 +274,6 @@ def medir_foco(pessoa, distancia=3.0, altura_real=1.70, aspecto=16 / 9):
     return pessoa.largura * aspecto * distancia / LARGURAS['person']
 
 
-def linhas_pelas_distancias(y_perto, d_perto, y_longe, d_longe):
-    k = (y_perto - y_longe) / (1.0 / d_perto - 1.0 / d_longe)
-    horizonte = y_perto - k / d_perto
-    return horizonte + k, horizonte + k / 3.0
+def chao_pelas_distancias(y_perto, d_perto, y_longe, d_longe):
+    escala = (y_perto - y_longe) / (1.0 / d_perto - 1.0 / d_longe)
+    return y_perto - escala / d_perto, escala

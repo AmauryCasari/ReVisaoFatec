@@ -17,8 +17,8 @@ def main():
     p = argparse.ArgumentParser(description='Testa o RéVisão numa foto.')
     p.add_argument('imagem')
     p.add_argument('--confianca', type=float, default=0.5)
-    p.add_argument('--linha-1m', type=float, default=0.82)
-    p.add_argument('--linha-3m', type=float, default=0.51)
+    p.add_argument('--horizonte', type=float, default=0.355)
+    p.add_argument('--escala', type=float, default=0.465)
     p.add_argument('--foco', type=float, default=0.87)
     p.add_argument('--perigo', type=float, default=1.0)
     p.add_argument('--atencao', type=float, default=3.0)
@@ -26,14 +26,14 @@ def main():
 
     imagem = Image.open(a.imagem).convert('RGB')
     detector = Detector(confianca=a.confianca)
-    cal = Calibracao(a.linha_1m, a.linha_3m, a.foco)
+    cal = Calibracao(a.horizonte, a.escala, a.foco)
     achados = detector.detectar_imagem(imagem)
     print(f'Motor: {detector.motor_nome} | {len(achados)} objeto(s) encontrado(s)')
 
     desenho = ImageDraw.Draw(imagem)
     largura, altura = imagem.size
     espessura = max(2, largura // 300)
-    for y, cor in ((a.linha_1m, CORES[2]), (a.linha_3m, CORES[1])):
+    for y, cor in ((cal.y_no_chao(a.perigo), CORES[2]), (cal.y_no_chao(a.atencao), CORES[1])):
         desenho.line([(0, y * altura), (largura, y * altura)], fill=cor, width=espessura)
     for d in achados:
         distancia = cal.estimar(d)

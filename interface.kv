@@ -81,16 +81,16 @@
     canvas.after:
         Color:
             rgba: cor('#3A3A3E')
-        RoundedRectangle:
-            pos: self.x + self.padding, self.center_y - dp(3)
-            size: max(0, self.width - 2 * self.padding), dp(6)
-            radius: [dp(3)]
+        Line:
+            points: self.x + self.padding, self.center_y, self.right - self.padding, self.center_y
+            width: dp(3)
+            cap: 'round'
         Color:
             rgba: AZUL
-        RoundedRectangle:
-            pos: self.x + self.padding, self.center_y - dp(3)
-            size: max(0, self.value_pos[0] - self.x - self.padding), dp(6)
-            radius: [dp(3)]
+        Line:
+            points: self.x + self.padding, self.center_y, max(self.x + self.padding, self.value_pos[0]), self.center_y
+            width: dp(3)
+            cap: 'round'
         Color:
             rgba: 1, 1, 1, 1
         Ellipse:
@@ -346,10 +346,10 @@ ScreenManager:
                 escala_texto: app.escala_texto
                 dist_perigo: root.dist_perigo
                 dist_atencao: root.dist_atencao
-                linha_1m: root.linha_1m
-                linha_3m: root.linha_3m
-                on_linha_1m: root.linha_1m = self.linha_1m
-                on_linha_3m: root.linha_3m = self.linha_3m
+                chao_horizonte: root.chao_horizonte
+                chao_escala: root.chao_escala
+                on_chao_horizonte: root.chao_horizonte = self.chao_horizonte
+                on_chao_escala: root.chao_escala = self.chao_escala
                 pos_hint: {'x': 0, 'y': 0}
             BoxLayout:
                 orientation: 'vertical'

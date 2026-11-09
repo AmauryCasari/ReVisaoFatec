@@ -250,8 +250,8 @@ class TelaCamera(Screen):
 
 
 class TelaCalibracao(Screen):
-    linha_1m = NumericProperty(PADRAO['linha_1m'])
-    linha_3m = NumericProperty(PADRAO['linha_3m'])
+    chao_horizonte = NumericProperty(PADRAO['chao_horizonte'])
+    chao_escala = NumericProperty(PADRAO['chao_escala'])
     foco = NumericProperty(PADRAO['foco'])
     usar_chao = BooleanProperty(False)
     distancia_medida = NumericProperty(3.0)
@@ -283,8 +283,8 @@ class TelaCalibracao(Screen):
         cfg = a.cfg
         if recarregar:
             self._carregando = True
-            self.linha_1m = cfg['linha_1m']
-            self.linha_3m = cfg['linha_3m']
+            self.chao_horizonte = cfg['chao_horizonte']
+            self.chao_escala = cfg['chao_escala']
             self.foco = cfg['foco']
             self.usar_chao = cfg['linhas_do_chao']
             self.distancia_medida = cfg['distancia_medida']
@@ -344,8 +344,8 @@ class TelaCalibracao(Screen):
 
     def salvar(self):
         a = app()
-        a.cfg['linha_1m'] = self.linha_1m
-        a.cfg['linha_3m'] = self.linha_3m
+        a.cfg['chao_horizonte'] = self.chao_horizonte
+        a.cfg['chao_escala'] = self.chao_escala
         a.cfg['foco'] = self.foco
         a.cfg['linhas_do_chao'] = self.usar_chao
         a.cfg['distancia_medida'] = self.distancia_medida
@@ -357,8 +357,8 @@ class TelaCalibracao(Screen):
 
     def restaurar(self):
         self._carregando = True
-        self.linha_1m = PADRAO['linha_1m']
-        self.linha_3m = PADRAO['linha_3m']
+        self.chao_horizonte = PADRAO['chao_horizonte']
+        self.chao_escala = PADRAO['chao_escala']
         self.foco = PADRAO['foco']
         self.usar_chao = False
         self._carregando = False
