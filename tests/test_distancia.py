@@ -4,7 +4,7 @@ import pytest
 
 from distancia import (ATENCAO, LARGURAS, LIVRE, OBJETOS, PERIGO, Calibracao, Deteccao, Rastreador,
                        Situacao, escolher_pessoa, formatar_limite, formatar_metros,
-                       intervalo_bipe, iou, medir_foco, texto_pare, texto_status,
+                       intervalo_bipe, iou, linhas_pelas_distancias, medir_foco, texto_pare, texto_status,
                        zona_da_distancia)
 
 
@@ -215,3 +215,10 @@ def test_medir_pessoa_cortada_usa_a_largura():
     pessoa = Deteccao('person', 0.9, 0.33, 0.33, 0.505, 1.0)
     foco = medir_foco(pessoa, 2.0, 1.70, 16 / 9)
     assert Calibracao(foco=foco).estimar(pessoa) == pytest.approx(2.0)
+
+
+def test_linhas_pelas_distancias_de_perigo_e_atencao():
+    linha_1m, linha_3m = linhas_pelas_distancias(0.9, 1.5, 0.55, 8.0)
+    cal = Calibracao(linha_1m, linha_3m, usar_chao=True)
+    assert cal.y_no_chao(1.5) == pytest.approx(0.9)
+    assert cal.y_no_chao(8.0) == pytest.approx(0.55)

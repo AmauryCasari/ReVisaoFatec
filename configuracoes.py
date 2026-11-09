@@ -29,8 +29,8 @@ LIMITES = {
     'dist_perigo': (0.5, 2.5),
     'dist_atencao': (1.0, 8.0),
     'escala_texto': (0.8, 1.6),
-    'linha_1m': (0.1, 1.0),
-    'linha_3m': (0.05, 0.95),
+    'linha_1m': (0.0, 4.0),
+    'linha_3m': (-1.0, 4.0),
     'foco': (0.3, 3.0),
     'altura_pessoa': (1.0, 2.2),
     'distancia_medida': (1.0, 5.0),
@@ -83,7 +83,7 @@ class Configuracoes:
             v['camera'] = '0'
         if v['dist_atencao'] < v['dist_perigo'] + 0.5:
             v['dist_atencao'] = round(v['dist_perigo'] + 0.5, 1)
-        if v['linha_3m'] > v['linha_1m'] - 0.05:
+        if v['linha_3m'] > v['linha_1m'] - 0.01:
             v['linha_1m'], v['linha_3m'] = PADRAO['linha_1m'], PADRAO['linha_3m']
 
     def salvar(self):

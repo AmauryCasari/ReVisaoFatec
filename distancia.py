@@ -282,3 +282,9 @@ def medir_foco(pessoa, distancia=3.0, altura_real=1.70, aspecto=16 / 9):
     if inteira:
         return pessoa.altura * distancia / altura_real
     return pessoa.largura * aspecto * distancia / LARGURAS['person']
+
+
+def linhas_pelas_distancias(y_perto, d_perto, y_longe, d_longe):
+    k = (y_perto - y_longe) / (1.0 / d_perto - 1.0 / d_longe)
+    horizonte = y_perto - k / d_perto
+    return horizonte + k, horizonte + k / 3.0

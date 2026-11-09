@@ -238,6 +238,12 @@ ScreenManager:
                 pos_hint: {'x': 0.02, 'y': 0.03}
                 font_size: sp(12) * app.escala_texto
             Chip:
+                text: root.tempo_gravacao if root.gravando else root.aviso_gravacao
+                pos_hint: {'right': 0.98, 'top': 0.97}
+                opacity: 1 if (root.gravando or root.aviso_gravacao) else 0
+                fundo: VERMELHO_FORTE if root.gravando else [0, 0, 0, 0.72]
+                font_size: sp(13) * app.escala_texto
+            Chip:
                 text: root.status_texto
                 pos_hint: {'x': 0.02, 'top': 0.97}
                 opacity: 0 if (root.analisando and root.nivel == 2) else 1
@@ -307,6 +313,12 @@ ScreenManager:
                 size_hint_y: 1
                 on_release: root.trocar_camera()
             Botao:
+                id: botao_gravar
+                text: 'Parar gravação' if root.gravando else 'Gravar'
+                size_hint_y: 1
+                cor: VERMELHO_FORTE if root.gravando else CARTAO2
+                on_release: root.alternar_gravacao()
+            Botao:
                 text: 'Ajustes'
                 size_hint_y: 1
                 on_release: root.abrir_ajustes()
@@ -332,6 +344,8 @@ ScreenManager:
                 id: sobre
                 modo_calibracao: True
                 escala_texto: app.escala_texto
+                dist_perigo: root.dist_perigo
+                dist_atencao: root.dist_atencao
                 linha_1m: root.linha_1m
                 linha_3m: root.linha_3m
                 on_linha_1m: root.linha_1m = self.linha_1m
@@ -359,7 +373,7 @@ ScreenManager:
                     text: '1. Escolha a distância, peça para uma pessoa ficar de frente para a câmera nessa distância e toque em Medir pessoa.'
                     font_size: sp(14) * app.escala_texto
                 Texto:
-                    text: '2. Só se a câmera enxerga o chão: ligue Linhas do chão, marque 1 m e 3 m no chão e arraste as linhas até as marcas.'
+                    text: '2. Só se a câmera enxerga o chão: ligue Linhas do chão, marque no chão as distâncias de perigo ({} m) e de atenção ({} m) e arraste as linhas até as marcas.'.format('{:g}'.format(root.dist_perigo).replace('.', ','), '{:g}'.format(root.dist_atencao).replace('.', ','))
                     font_size: sp(14) * app.escala_texto
                 Texto:
                     text: '3. Toque em Salvar calibração.'

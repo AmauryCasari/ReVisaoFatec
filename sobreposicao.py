@@ -8,7 +8,7 @@ from kivy.properties import BooleanProperty, ListProperty, NumericProperty, Obje
 from kivy.uix.stencilview import StencilView
 from kivy.utils import get_color_from_hex
 
-from distancia import ATENCAO, LIVRE, PERIGO, Calibracao, formatar_limite
+from distancia import ATENCAO, LIVRE, PERIGO, Calibracao, formatar_limite, linhas_pelas_distancias
 
 COR_ZONA = {
     LIVRE: get_color_from_hex('#3DD68C'),
@@ -119,7 +119,9 @@ class Sobreposicao(_Desenho):
     def _desenhar_guias(self):
         if self.modo_calibracao:
             cal = Calibracao(self.linha_1m, self.linha_3m)
-            marcas = [(self.linha_1m, PERIGO, '1 m'), (self.linha_3m, ATENCAO, '3 m')]
+            y_perto, y_longe = self._linhas_calibracao()
+            marcas = [(y_perto, PERIGO, f'{formatar_limite(self.dist_perigo)} m'),
+                      (y_longe, ATENCAO, f'{formatar_limite(self.dist_atencao)} m')]
         else:
             cal = self.calibracao or Calibracao()
             marcas = [
@@ -213,11 +215,17 @@ class Sobreposicao(_Desenho):
             Line(rectangle=(min(xa, xb), y_base, abs(xb - xa), y_topo - y_base), width=dp(2))
             self.etiqueta('Pessoa', min(xa, xb), y_topo, (1, 1, 1, 0.9))
 
+    def _linhas_calibracao(self):
+        cal = Calibracao(self.linha_1m, self.linha_3m)
+        y_perto = min(0.99, max(0.05, cal.y_no_chao(self.dist_perigo)))
+        y_longe = min(y_perto - 0.03, max(0.02, cal.y_no_chao(self.dist_atencao)))
+        return y_perto, y_longe
+
     def on_touch_down(self, touch):
         if self.modo_calibracao and self.collide_point(*touch.pos):
             candidatas = []
-            for nome in ('linha_1m', 'linha_3m'):
-                _, y_linha = self.ponto(0.5, getattr(self, nome))
+            for nome, yn in zip(('perto', 'longe'), self._linhas_calibracao()):
+                _, y_linha = self.ponto(0.5, yn)
                 candidatas.append((abs(touch.y - y_linha), nome))
             distancia, nome = min(candidatas)
             if distancia <= dp(36):
@@ -229,11 +237,15 @@ class Sobreposicao(_Desenho):
     def on_touch_move(self, touch):
         if touch.grab_current is self and self._arrastando:
             yn = self.y_normal(touch.y)
-            if self._arrastando == 'linha_1m':
-                yn = min(0.99, max(self.linha_3m + 0.05, yn))
+            y_perto, y_longe = self._linhas_calibracao()
+            if self._arrastando == 'perto':
+                y_perto = min(0.99, max(y_longe + 0.03, yn))
             else:
-                yn = max(0.05, min(self.linha_1m - 0.05, yn))
-            setattr(self, self._arrastando, yn)
+                y_longe = max(0.02, min(y_perto - 0.03, yn))
+            linha_1m, linha_3m = linhas_pelas_distancias(
+                y_perto, self.dist_perigo, y_longe, self.dist_atencao)
+            self.linha_1m = linha_1m
+            self.linha_3m = linha_3m
             return True
         return super().on_touch_move(touch)
 

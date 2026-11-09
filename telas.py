@@ -1,3 +1,4 @@
+import os
 import time
 
 from kivy.app import App
@@ -48,6 +49,9 @@ class TelaCamera(Screen):
     pare_detalhe = StringProperty('')
     aviso = StringProperty('')
     som_ligado = BooleanProperty(True)
+    gravando = BooleanProperty(False)
+    tempo_gravacao = StringProperty('')
+    aviso_gravacao = StringProperty('')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -55,6 +59,15 @@ class TelaCamera(Screen):
         self._eventos = []
         self._ultimo_quadro = 0.0
         self._sem_imagem = False
+        self._inicio_gravacao = 0.0
+        self._arquivo_gravacao = ''
+        self._relogio = None
+        self._limpar_aviso = None
+
+    def on_kv_post(self, base_widget):
+        if platform == 'android':
+            botao = self.ids.botao_gravar
+            botao.parent.remove_widget(botao)
 
     def on_enter(self):
         self._comecar()
@@ -103,6 +116,7 @@ class TelaCamera(Screen):
         self._eventos.append(Clock.schedule_interval(self._vigiar, 0.5))
 
     def _encerrar(self):
+        self.parar_gravacao()
         for evento in self._eventos:
             evento.cancel()
         self._eventos = []
@@ -195,6 +209,42 @@ class TelaCamera(Screen):
         self.status_texto = 'Trocando de câmera...'
         Clock.schedule_once(lambda dt: self._comecar(), 0.5)
 
+    def alternar_gravacao(self):
+        if self.gravando:
+            self.parar_gravacao()
+            return
+        caminho = self.ids.camera.comecar_gravacao()
+        if caminho is None:
+            self._avisar_gravacao('A câmera ainda não está pronta para gravar.')
+            return
+        self._arquivo_gravacao = caminho
+        self._inicio_gravacao = time.monotonic()
+        self.gravando = True
+        self.aviso_gravacao = ''
+        self._atualizar_relogio(0)
+        self._relogio = Clock.schedule_interval(self._atualizar_relogio, 0.5)
+
+    def parar_gravacao(self):
+        if not self.gravando:
+            return
+        self.ids.camera.parar_gravacao()
+        self.gravando = False
+        if self._relogio is not None:
+            self._relogio.cancel()
+            self._relogio = None
+        nome = os.path.basename(self._arquivo_gravacao)
+        self._avisar_gravacao(f'Vídeo salvo na pasta gravacoes: {nome}')
+
+    def _atualizar_relogio(self, dt):
+        segundos = int(time.monotonic() - self._inicio_gravacao)
+        self.tempo_gravacao = f'Gravando {segundos // 60:02d}:{segundos % 60:02d}'
+
+    def _avisar_gravacao(self, texto):
+        self.aviso_gravacao = texto
+        if self._limpar_aviso is not None:
+            self._limpar_aviso.cancel()
+        self._limpar_aviso = Clock.schedule_once(lambda dt: setattr(self, 'aviso_gravacao', ''), 6)
+
     def parar(self):
         app().voltar_para('inicio')
 
@@ -205,6 +255,8 @@ class TelaCalibracao(Screen):
     foco = NumericProperty(PADRAO['foco'])
     usar_chao = BooleanProperty(False)
     distancia_medida = NumericProperty(3.0)
+    dist_perigo = NumericProperty(1.0)
+    dist_atencao = NumericProperty(3.0)
     mensagem = StringProperty('')
 
     def __init__(self, **kwargs):
@@ -236,6 +288,8 @@ class TelaCalibracao(Screen):
             self.foco = cfg['foco']
             self.usar_chao = cfg['linhas_do_chao']
             self.distancia_medida = cfg['distancia_medida']
+            self.dist_perigo = cfg['dist_perigo']
+            self.dist_atencao = cfg['dist_atencao']
             self._carregando = False
             self.mensagem = ''
         self._pessoas = []
